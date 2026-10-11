@@ -20,15 +20,17 @@ def main():
     engine = GameEngine()
     running = True
     while running:
+        dt = clock.tick(60) / 1000.0
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-        engine.update()
+        keys = pygame.key.get_pressed()
+        engine.update(keys, dt)
         engine.draw(screen, font)
 
         pygame.display.flip()
-        clock.tick(60)
 
     pygame.quit()
 

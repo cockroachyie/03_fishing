@@ -1,34 +1,51 @@
 """
 GameEngine: owns the hook and the fish, and runs one frame's worth of
 game logic.
-
-Starter version: the hook casts and retracts automatically in a
-continuous loop - there's no player control over casting yet (that's
-Task 3), only one fish type exists (Task 2 adds more), and there's no
-round timer (Task 4). Catch detection also has a known bug (see
-game/catch.py) that Task 1 asks you to fix.
 """
 
+import pygame
+
 from game.hook import Hook, IDLE
-from game.fish import Fish
+from game.fish import SmallFish, BigFish
 from game.catch import check_catch
 from game.renderer import WIDTH, HEIGHT, SURFACE_Y, MAX_DEPTH_Y
+
+ROUND_SECONDS = 30
 
 
 class GameEngine:
     def __init__(self):
+        self.reset_round()
+
+    def reset_round(self):
         self.hook = Hook(x=WIDTH / 2, surface_y=SURFACE_Y, max_depth_y=MAX_DEPTH_Y, speed=5)
         self.fish_list = [
-            Fish(x=100, y=180, speed=2, point_value=10, color=(80, 180, 220)),
-            Fish(x=400, y=280, speed=-2, point_value=10, color=(80, 180, 220)),
-            Fish(x=250, y=380, speed=3, point_value=10, color=(80, 180, 220)),
+            SmallFish(x=100, y=180, speed=1.5),
+            BigFish(x=400, y=280, speed=-4.5),
+            SmallFish(x=250, y=380, speed=-1.5),
+            BigFish(x=550, y=220, speed=4.5),
         ]
         self.hooked_fish = None
         self.score = 0
+        self.time_remaining = ROUND_SECONDS
+        self.round_over = False
 
-    def update(self):
-        if self.hook.state == IDLE:
-            self.hook.start_cast()
+    def update(self, keys, dt):
+        if self.round_over:
+            if keys[pygame.K_r]:
+                self.reset_round()
+            return
+
+        self.time_remaining -= dt
+        if self.time_remaining <= 0:
+            self.time_remaining = 0
+            self.round_over = True
+            return
+
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            self.hook.move_down()
+        if keys[pygame.K_w] or keys[pygame.K_UP]:
+            self.hook.move_up()
 
         self.hook.update()
 
@@ -57,3 +74,11 @@ class GameEngine:
             draw_list.append(self.hooked_fish)
         renderer.draw_scene(surface, self.hook, draw_list)
         renderer.draw_text(surface, font, f"Score: {self.score}", (10, 10))
+        renderer.draw_text(surface, font, f"Time: {int(self.time_remaining)}", (WIDTH - 110, 10))
+
+        if self.round_over:
+            renderer.draw_banner(surface, font, f"Time's Up!  Final Score: {self.score}")
+            renderer.draw_text(
+                surface, font, "Press R to play again",
+                (WIDTH // 2 - 90, HEIGHT // 2 + 30),
+            )

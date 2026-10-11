@@ -1,14 +1,16 @@
 """
 Hook: the player's fishing hook. Moves only vertically, at a fixed
-horizontal position. In the starter, it casts and retracts on its own,
-in a continuous loop, with no player input at all - Task 3 changes
-this to be player-controlled.
+horizontal position. The player controls it directly - holding the
+down key (S / Down arrow) moves it toward the pond floor, holding the
+up key (W / Up arrow) moves it back toward the surface. The one
+exception is right after a catch: the hook ignores input and
+automatically retracts to the surface so the catch can be scored (see
+catch_fish()).
 """
 
 import pygame
 
 IDLE = "idle"
-CASTING = "casting"
 RETRACTING = "retracting"
 
 
@@ -23,17 +25,18 @@ class Hook:
         self.height = height
         self.state = IDLE
 
-    def start_cast(self):
-        self.state = CASTING
-        self.y = self.surface_y
+    def move_down(self):
+        """Player is holding the down key."""
+        if self.state == IDLE:
+            self.y = min(self.y + self.speed, self.max_depth_y)
+
+    def move_up(self):
+        """Player is holding the up key."""
+        if self.state == IDLE:
+            self.y = max(self.y - self.speed, self.surface_y)
 
     def update(self):
-        if self.state == CASTING:
-            self.y += self.speed
-            if self.y >= self.max_depth_y:
-                self.y = self.max_depth_y
-                self.state = RETRACTING
-        elif self.state == RETRACTING:
+        if self.state == RETRACTING:
             self.y -= self.speed
             if self.y <= self.surface_y:
                 self.y = self.surface_y
